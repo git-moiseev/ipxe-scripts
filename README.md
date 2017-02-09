@@ -14,4 +14,5 @@ host node-001 {
 where 
 - <strong>X.X.X.X</strong> is the IP address of your TFTP server, 
 - <strong>00:11:22:33:44:55</strong> is the MAC address of your new node server
-The <a href="undionly.kpxe">undionly.kpxe</a> will look the boot script, as file named <code>script.ipxe</code>, in your TFTP server's root directory, or, if this fails, at <a href="http://pxe.plentystars.com/script.ipxe">http://pxe.plentystars.com/script.ipxe</a>. So, you can download <a href="script.ipxe">script.ipxe</a>, customize it and save it to your own TFPT server.
+The <a href="undionly.kpxe">undionly.kpxe</a> will look the boot script, as file named <code>script.ipxe</code>, in your TFTP server's root directory, or, if this fails, at <a href="http://pxe.plentystars.com/script.ipxe">http://pxe.plentystars.com/script.ipxe</a>. 
+* You can download <a href="script.ipxe.plain">script.ipxe.plain</a>, customize it and save it to your own TFPT server as script.ipxe.
