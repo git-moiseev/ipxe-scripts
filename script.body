@@ -1,0 +1,136 @@
+
+set ks http://repo.plentystars.com/os
+
+:start
+set menu-timeout 5000
+set menu-default hdd-boot
+
+menu iPXE boot (${net0/ip}) Location: ${geo} 
+item --gap --             ------------------------- Installer and boot -----------------------------
+item --key b hdd-boot     Boot from Hard Drive
+item --key a ce-rpm	  Install CentOS-6 with Asteraid Community Edition. Unattended.
+item --gap --             ------------------------- Developers options -----------------------------
+item --key d ce-dev       Install CentOS-6 Core with Asteraid repos. Unattended.
+item --key r ce-core      Install CentOS-6 Core. Unattended.
+item --key 7 ce-7-dev     Install CentOS-7 Core. Unattended.
+item --key s source	  Choose source url
+item --key o other        Other options
+item --gap --             ------------------------- Advanced options -------------------------------
+item --key x cent-disk    Install CentOS-6 with Asteraid repos in X-mode, Manual. You need 1G memory
+item --key e ce-disk      Install CentOS-6 with Asteraid CE in X-mode, Manual. You need 1G memory
+item --gap --             ------------------------- Debug options ----------------------------------
+item --key c config       Configure Network and Hardware settings
+item shell                Drop to iPXE shell
+item reboot               Reboot computer
+#item poweroff		  Shutdown
+item
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:cancel
+echo You cancelled the menu, dropping you to a shell
+
+:config
+config
+goto start
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:reboot
+reboot
+
+:poweroff
+poweroff
+
+:exit
+exit
+
+:failed
+echo Booting failed, dropping to shell
+goto shell
+
+:source 
+menu Source managment (Currentxare closests to ${tz})
+item --key 6  s6       Edit CentOS 6 URL ${url6}
+item --key 7  s7       Edit CentOS 7 URL ${url7}
+item --key 0x08 start  Back to top menu...
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:s6
+echo Edit Value
+read url6
+goto start
+
+:s7
+echo Edit Value
+read url7
+goto start 
+
+:hdd-boot
+sanboot --no-describe --drive 0x80 || goto start
+goto start
+ 
+:ce-rpm
+iseq ${arch} i386 && goto wrong_arch || set ks ${ks}/ks.cfg
+goto ce-install
+
+:wrong_arch
+prompt At this time only x86_64 arch is supported for configuration server.            If you wish to install voice node on this i386 server, return to main menu and choose "Install CentOS-6 with Asteraid repos." Press any key to continue... && goto start || goto start
+
+#
+#
+#
+#set menu-timeout 10000
+#
+#menu At this time only x86_64 arch is supported for configuration server. If you wish to install voice node on this i386 server, return to main menu and choose "Install CentOS-6 with Asteraid repos."
+#item shell                Drop to iPXE shel
+#item reboot               Reboot computer
+#item
+#item --key 0x08 start     Back to top menu...
+#choose selected && goto ${selected}
+
+:ce-core
+set ks ${ks}/ks-core.cfg
+goto ce-install
+
+:ce-disk
+set url ${url}
+set ks ${ks}/ks-disk.cfg
+goto ce-install
+
+:cent-disk
+set url ${url}
+set ks ${ks}/ks-centos-disk.cfg
+goto ce-install
+
+:ce-dev
+set url ${url}
+set ks ${ks}/ks-dev.cfg
+goto ce-install
+
+:ce-7-dev
+set url ${url7}
+set ks  http://pxe.plentystars.com/dyn-ks.php
+kernel  ${url}/images/pxeboot/vmlinuz install auto=true priority=critical ip=dhcp repo=${url} ks=${ks} || goto mirror
+initrd  ${url}/images/pxeboot/initrd.img
+boot || goto start
+
+:ce-install
+kernel ${url}images/pxeboot/vmlinuz install auto=true priority=critical ip=dhcp repo=${url} ks=${ks} || goto mirror
+initrd ${url}images/pxeboot/initrd.img
+boot || goto start
+
+:mirror
+set url http://mirrors.kernel.org/centos/6/os/${arch}
+goto ce-install
+
+:other
+chain http://boot.salstar.sk

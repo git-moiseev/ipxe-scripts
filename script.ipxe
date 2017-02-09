@@ -1,0 +1,4 @@
+#!ipxe
+
+cpuid --ext 29 && set arch x86_64 || set arch i386
+chain http://pxe.plentystars.com/getipxe.php?release=6&repo=os&arch=${arch}

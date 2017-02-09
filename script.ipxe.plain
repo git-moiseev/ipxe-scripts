@@ -1,0 +1,97 @@
+#!ipxe
+
+#
+# See http://ipxe.org/docs for docs
+# more exapmples at https://gist.github.com/robinsmidsrod/2234639
+#
+
+:start
+set menu-timeout 10000
+set menu-default hdd-boot
+
+cpuid --ext 29 && set arch x86_64 || set arch i386
+
+#set mirror mirror.centos.org
+set mirror mirrors.kernel.org
+#
+# if your dns is the google, geoip may fail and it is better use fixed servers than mirrors
+#
+iseq ${net0/dns} 8.8.8.8 && set mirror mirror.yandex.ru ||  
+iseq ${net0/dns} 8.8.4.4 && set mirror mirror.yandex.ru ||
+
+set url http://${mirror}/centos/6/os/${arch}
+set ks http://repo.plentystars.com/os
+
+menu iPXE boot (${net0/ip}) 
+item --gap --             ------------------------- Installer and boot -----------------------------
+item --key b hdd-boot     Boot from Hard Drive
+item --key a ce-rpm	  Install CentOS-6 with Asteraid Community Edition. Unattended.
+item --gap --             ------------------------- Developers options -----------------------------
+item --key d ce-dev       Install CentOS-6 with Asteraid repos. Unattended.
+item --gap --             ------------------------- Advanced options -------------------------------
+item --key x cent-disk    Install CentOS-6 with Asteraid repos in X-mode, Manual. You need 1G memory
+item --key e ce-disk      Install CentOS-6 with Asteraid CE in X-mode, Manual. You need 1G memory
+item --gap --             ------------------------- Debug options ----------------------------------
+item --key c config       Configure Network and Hardware settings
+item shell                Drop to iPXE shell
+item reboot               Reboot computer
+item
+choose --timeout ${menu-timeout} --default ${menu-default} selected || goto cancel
+set menu-timeout 0
+goto ${selected}
+
+:cancel
+echo You cancelled the menu, dropping you to a shell
+
+:config
+config
+goto start
+
+:shell
+echo Type 'exit' to get the back to the menu
+shell
+set menu-timeout 0
+set submenu-timeout 0
+goto start
+
+:reboot
+reboot
+
+:exit
+exit
+
+:failed
+echo Booting failed, dropping to shell
+goto shell
+
+:hdd-boot
+sanboot --no-describe --drive 0x80 || goto start
+goto start
+ 
+:ce-rpm
+set ks ${ks}/ks.cfg
+goto ce-install
+
+:ce-disk
+set url ${url}
+set ks ${ks}/ks-disk.cfg
+goto ce-install
+
+:cent-disk
+set url ${url}
+set ks ${ks}/ks-centos-disk.cfg
+goto ce-install
+
+:ce-dev
+set url ${url}
+set ks ${ks}/ks-dev.cfg
+goto ce-install
+
+:ce-install
+kernel ${url}/images/pxeboot/vmlinuz install auto=true priority=critical ip=dhcp repo=${url}/ ks=${ks} || goto mirror
+initrd ${url}/images/pxeboot/initrd.img
+boot || goto start
+
+:mirror
+set url http://centos.mirror.cdnetworks.com/6.6/os/${arch}
+goto ce-install
